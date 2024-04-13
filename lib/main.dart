@@ -38,6 +38,7 @@ class _ReminderScreenState extends State<ReminderScreen> {
   @override
   void initState() {
     super.initState();
+
     const settingsAndroid = AndroidInitializationSettings('app_icon');
     final settingsIOS = IOSInitializationSettings();
     final settings = InitializationSettings(
@@ -54,11 +55,11 @@ class _ReminderScreenState extends State<ReminderScreen> {
         title: const Text('Reminder with Notifications'),
       ),
       body: Center(
-        child: RaisedButton(
+        child: ElevatedButton(
           onPressed: () {
             _showDateTimePicker();
           },
-          child: const Text('Select Reminder Time'),
+          child: const Text('Seleciona una Hora'),
         ),
       ),
     );
@@ -77,8 +78,8 @@ class _ReminderScreenState extends State<ReminderScreen> {
   }
 
   void _scheduleNotification(DateTime selectedTime) async {
-    var androidPlatformChannelSpecifics =  const AndroidNotificationDetails(
-      'channel_id',
+    var androidPlatformChannelSpecifics = const AndroidNotificationDetails(
+      'high_importance_channel',
       'channel_name',
       importance: Importance.high,
       priority: Priority.high,
@@ -89,43 +90,48 @@ class _ReminderScreenState extends State<ReminderScreen> {
       iOS: iOSPlatformChannelSpecifics,
     );
 
-    await flutterLocalNotificationsPlugin.zonedSchedule(
-      0,
-      'Reminder',
-      'Time to do something!',
-      _nextInstanceOfSelectedTime(selectedTime),
-      platformChannelSpecifics,
-      // ignore: deprecated_member_use
-      androidAllowWhileIdle: true,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-      matchDateTimeComponents: DateTimeComponents.time,
-    );
+    final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
+        flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
 
-    // ignore: use_build_context_synchronously
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Reminder scheduled at ${selectedTime.hour}:${selectedTime.minute}'),
-      ),
-    );
-  }
+    bool grantedNotificationPermission =
+        await androidImplementation?.requestNotificationsPermission() ?? false;
 
-  tz.TZDateTime _nextInstanceOfSelectedTime(DateTime selectedTime) {
-    final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
-    tz.TZDateTime scheduledDate =
-        tz.TZDateTime(tz.local, now.year, now.month, now.day, selectedTime.hour, selectedTime.minute);
-    if (scheduledDate.isBefore(now)) {
-      scheduledDate = scheduledDate.add(const Duration(days: 1));
+    if (grantedNotificationPermission) {
+      await flutterLocalNotificationsPlugin.zonedSchedule(
+        0,
+        'Recordatorio',
+        'Hora de hacer algo con tu vida!',
+        convertToTZDateTime(selectedTime),
+        platformChannelSpecifics,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        matchDateTimeComponents: DateTimeComponents.time,
+      );
+
+      // ignore: use_build_context_synchronously
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              'Recordatorio programado para las ${selectedTime.hour}:${selectedTime.minute} horas'),
+        ),
+      );
     }
-    return scheduledDate;
   }
-  
+
+// Función para convertir DateTime a TZDateTime
+  tz.TZDateTime convertToTZDateTime(DateTime dateTime) {
+    String timeZoneName = 'America/Mexico_City'; // Ejemplo de zona horaria
+    tz.Location timeZone = tz.getLocation(timeZoneName);
+    tz.TZDateTime time = tz.TZDateTime.from(dateTime, timeZone);
+
+    return time;
+  }
+
   // ignore: non_constant_identifier_names
   IOSInitializationSettings() {}
-  
-  // ignore: non_constant_identifier_names
-  RaisedButton({required Null Function() onPressed, required Text child}) {}
-  
+
   // ignore: non_constant_identifier_names
   IOSNotificationDetails() {}
 }
