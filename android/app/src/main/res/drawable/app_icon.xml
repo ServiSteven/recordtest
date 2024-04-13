@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+    <!-- Cuerpo -->
+    <ellipse cx="200" cy="200" rx="100" ry="150" fill="green" />
+
+    <!-- Cabeza -->
+    <ellipse cx="200" cy="100" rx="80" ry="60" fill="green" />
+
+    <!-- Ojo -->
+    <circle cx="230" cy="80" r="10" fill="white" />
+
+    <!-- Nariz -->
+    <polygon points="220,100 240,100 230,120" fill="orange" />
+
+    <!-- Patas -->
+    <rect x="150" y="250" width="30" height="100" fill="green" />
+    <rect x="220" y="250" width="30" height="100" fill="green" />
+</svg>
